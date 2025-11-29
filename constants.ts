@@ -12,6 +12,33 @@ export const GAMES: Game[] = [
   { id: 'sf6', title: 'Street Fighter 6', category: 'Fighting', prizePool: '$1,500,000', image: 'https://picsum.photos/800/450?random=8', status: 'Completed' },
 ];
 
+export const HERO_SLIDES = [
+  {
+    id: 1,
+    image: 'https://picsum.photos/1920/1080?random=101',
+    title: 'THE WORLD COMES TO RIYADH',
+    subtitle: '$60,000,000+ Prize Pool. 20+ Games. History in the making.',
+    cta: 'View Schedule',
+    ctaLink: 'schedule'
+  },
+  {
+    id: 2,
+    image: 'https://picsum.photos/1920/1080?random=102',
+    title: 'CLUB CHAMPIONSHIP',
+    subtitle: 'One Club to Rule Them All. Who will take the crown?',
+    cta: 'View Standings',
+    ctaLink: 'ranking'
+  },
+  {
+    id: 3,
+    image: 'https://picsum.photos/1920/1080?random=103',
+    title: 'FANTASY LEAGUE IS LIVE',
+    subtitle: 'Draft your dream team and win exclusive rewards.',
+    cta: 'Play Now',
+    ctaLink: 'fantasy'
+  }
+];
+
 export const CLUBS: Club[] = [
   { id: '1', name: 'Team Falcons', points: 5200, rank: 1, earnings: '$7,000,000', logo: '🦅', trend: 'stable' },
   { id: '2', name: 'Team Liquid', points: 4100, rank: 2, earnings: '$4,500,000', logo: '💧', trend: 'up' },

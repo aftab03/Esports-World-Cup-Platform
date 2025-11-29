@@ -6,11 +6,16 @@ import { useAppContext } from '../context/AppContext';
 export const LiveChat: React.FC = () => {
   const { chatMessages, addChatMessage, activePoll, votePoll } = useAppContext();
   const [input, setInput] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom on new message
+  // Auto-scroll to bottom on new message using container scrollTop to avoid page jumping
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
   }, [chatMessages]);
 
   const handleSend = () => {
@@ -32,7 +37,7 @@ export const LiveChat: React.FC = () => {
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-[#0a0a0a]">
+      <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-[#0a0a0a]">
          {chatMessages.map((msg) => (
             <div key={msg.id} className="text-sm break-words leading-snug animate-fade-in">
                <span className="font-bold mr-2" style={{ color: msg.color || '#aaa' }}>
@@ -42,7 +47,6 @@ export const LiveChat: React.FC = () => {
                <span className="text-gray-300">{msg.text}</span>
             </div>
          ))}
-         <div ref={messagesEndRef} />
       </div>
 
       {/* Active Poll Overlay */}

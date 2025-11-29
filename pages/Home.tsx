@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { Play, Calendar, Trophy, ArrowRight, TrendingUp, Target, Shield, Clock } from 'lucide-react';
+import { Play, Calendar, Trophy, ArrowRight, TrendingUp, Target, Shield, Clock, Search, ChevronLeft, ChevronRight, Filter, Gamepad2 } from 'lucide-react';
 import { NavSection, Match } from '../types';
 import { useAppContext } from '../context/AppContext';
 import { StreamPlayer } from '../components/StreamPlayer';
 import { LiveChat } from '../components/LiveChat';
+import { HERO_SLIDES } from '../constants';
 
 interface HomeProps {
   onNavigate: (section: NavSection) => void;
@@ -16,6 +17,36 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
   // Find the live match from global state (updated by Context)
   const liveMatch = matches.find(m => m.status === 'Live');
   const [showStats, setShowStats] = useState(false);
+  
+  // Slider State
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Search & Filter State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedStatus, setSelectedStatus] = useState('All');
+
+  // Auto-play Slider
+  useEffect(() => {
+    if (liveMatch) return; // Don't slide if watching stream
+    const interval = setInterval(() => {
+      setCurrentSlide(prev => (prev + 1) % HERO_SLIDES.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [liveMatch]);
+
+  const nextSlide = () => setCurrentSlide(prev => (prev + 1) % HERO_SLIDES.length);
+  const prevSlide = () => setCurrentSlide(prev => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
+
+  // Filtered Games Logic
+  const filteredGames = games.filter(game => {
+    const matchesSearch = game.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === 'All' || game.category === selectedCategory;
+    const matchesStatus = selectedStatus === 'All' || game.status === selectedStatus;
+    return matchesSearch && matchesCategory && matchesStatus;
+  });
+
+  const uniqueCategories = ['All', ...Array.from(new Set(games.map(g => g.category)))];
 
   return (
     <div className="space-y-12 pb-20">
@@ -111,49 +142,132 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
             </div>
          </section>
       ) : (
-         // DEFAULT HERO (NO LIVE MATCH)
-         <section className="relative h-[85vh] flex items-center justify-center overflow-hidden">
-           <div className="absolute inset-0 z-0">
-             <img 
-               src="https://picsum.photos/1920/1080?random=99" 
-               alt="Hero Background" 
-               className="w-full h-full object-cover opacity-40 scale-105 animate-[pulse_10s_ease-in-out_infinite]"
-             />
-             <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/60 to-transparent" />
-             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
-           </div>
-           
-           <div className="relative z-10 text-center max-w-5xl px-4">
-             <h2 className="text-ewc-gold font-display font-bold tracking-[0.2em] mb-4 text-lg md:text-xl uppercase animate-fade-in-down">
-               The World's Largest Esports Festival
-             </h2>
-             <h1 className="text-5xl md:text-9xl font-black text-white font-display mb-6 leading-none tracking-tighter shadow-xl">
-               ESPORTS <br />
-               <span className="text-transparent bg-clip-text bg-gradient-to-r from-ewc-gold to-yellow-200">WORLD CUP</span>
-             </h1>
-             <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-2xl mx-auto font-light">
-               $60,000,000+ Prize Pool. 20+ Games. 8 Weeks.
-               <br/><span className="text-ewc-gold font-bold">History is being written in Riyadh.</span>
-             </p>
-             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-               <button onClick={() => onNavigate(NavSection.SCHEDULE)} className="px-8 py-4 bg-ewc-gold text-black font-bold text-lg rounded hover:bg-white transition-all transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(212,175,55,0.4)]">
-                 <Calendar size={20} />
-                 View Schedule
-               </button>
-               <button onClick={() => onNavigate(NavSection.COMPETITIONS)} className="px-8 py-4 bg-white/10 backdrop-blur-md border border-white/20 text-white font-bold text-lg rounded hover:bg-white/20 transition-all flex items-center justify-center gap-2">
-                 <Trophy size={20} />
-                 Explore Games
-               </button>
+         // SLIDER HERO WITH SEARCH (Default Mode)
+         <section className="relative h-[85vh] overflow-hidden">
+           {/* Slider Content */}
+           {HERO_SLIDES.map((slide, index) => (
+             <div 
+                key={slide.id}
+                className={`absolute inset-0 transition-opacity duration-1000 ${index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+             >
+                <img 
+                  src={slide.image} 
+                  alt={slide.title} 
+                  className="w-full h-full object-cover opacity-50 scale-105 animate-[pulse_15s_ease-in-out_infinite]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/40 to-transparent" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+                  <h2 className="text-ewc-gold font-display font-bold tracking-[0.2em] mb-4 text-lg md:text-xl uppercase animate-fade-in-down">
+                     Welcome to Riyadh
+                  </h2>
+                  <h1 className="text-5xl md:text-8xl font-black text-white font-display mb-6 leading-none tracking-tighter shadow-xl animate-fade-in-up">
+                     {slide.title}
+                  </h1>
+                  <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-2xl mx-auto font-light animate-fade-in">
+                     {slide.subtitle}
+                  </p>
+                  <button 
+                     onClick={() => onNavigate(slide.ctaLink as NavSection)}
+                     className="px-8 py-4 bg-ewc-gold text-black font-bold text-lg rounded hover:bg-white transition-all transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(212,175,55,0.4)] animate-bounce-in"
+                  >
+                     <Trophy size={20} />
+                     {slide.cta}
+                  </button>
+                </div>
              </div>
+           ))}
+
+           {/* Slider Navigation */}
+           <button onClick={prevSlide} className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 bg-black/30 hover:bg-ewc-gold hover:text-black text-white rounded-full backdrop-blur-md transition-all border border-white/10">
+              <ChevronLeft size={32} />
+           </button>
+           <button onClick={nextSlide} className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 bg-black/30 hover:bg-ewc-gold hover:text-black text-white rounded-full backdrop-blur-md transition-all border border-white/10">
+              <ChevronRight size={32} />
+           </button>
+
+           {/* Dots */}
+           <div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-20 flex gap-3">
+              {HERO_SLIDES.map((_, idx) => (
+                 <button 
+                    key={idx}
+                    onClick={() => setCurrentSlide(idx)}
+                    className={`w-3 h-3 rounded-full transition-all ${idx === currentSlide ? 'bg-ewc-gold w-8' : 'bg-white/30 hover:bg-white'}`}
+                 />
+              ))}
+           </div>
+
+           {/* ADVANCED SEARCH BAR (Bottom Center Overlay) */}
+           <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-30 w-[90%] max-w-4xl">
+              <div className="bg-[#111]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-2 md:p-4 shadow-2xl flex flex-col md:flex-row gap-4 items-center animate-fade-in-up">
+                 {/* Text Input */}
+                 <div className="relative flex-1 w-full">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
+                    <input 
+                       type="text" 
+                       placeholder="Find tournaments, games, or teams..." 
+                       value={searchQuery}
+                       onChange={(e) => setSearchQuery(e.target.value)}
+                       className="w-full bg-black/50 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white focus:outline-none focus:border-ewc-gold transition-colors"
+                    />
+                 </div>
+                 
+                 {/* Filters */}
+                 <div className="flex gap-2 w-full md:w-auto">
+                    <div className="relative flex-1 md:w-40">
+                       <Gamepad2 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                       <select 
+                          value={selectedCategory}
+                          onChange={(e) => setSelectedCategory(e.target.value)}
+                          className="w-full bg-black/50 border border-white/10 rounded-xl pl-10 pr-8 py-3 text-sm text-gray-300 focus:outline-none focus:border-ewc-gold appearance-none cursor-pointer"
+                       >
+                          {uniqueCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                       </select>
+                       <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none border-l border-white/10 pl-2">
+                          <span className="text-gray-500 text-[10px]">▼</span>
+                       </div>
+                    </div>
+
+                    <div className="relative flex-1 md:w-40">
+                       <div className={`w-3 h-3 rounded-full absolute left-3 top-1/2 -translate-y-1/2 ${selectedStatus === 'Live' ? 'bg-red-500 animate-pulse' : 'bg-gray-500'}`}></div>
+                       <select 
+                          value={selectedStatus}
+                          onChange={(e) => setSelectedStatus(e.target.value)}
+                          className="w-full bg-black/50 border border-white/10 rounded-xl pl-8 pr-8 py-3 text-sm text-gray-300 focus:outline-none focus:border-ewc-gold appearance-none cursor-pointer"
+                       >
+                          <option value="All">All Status</option>
+                          <option value="Live">Live Now</option>
+                          <option value="Upcoming">Upcoming</option>
+                          <option value="Completed">Completed</option>
+                       </select>
+                       <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none border-l border-white/10 pl-2">
+                          <span className="text-gray-500 text-[10px]">▼</span>
+                       </div>
+                    </div>
+                 </div>
+
+                 {/* Action Button */}
+                 <button 
+                    onClick={() => {
+                        // Scroll to results if needed, currently results are right below
+                        const element = document.getElementById('featured-competitions');
+                        element?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="w-full md:w-auto px-6 py-3 bg-ewc-gold text-black font-bold rounded-xl hover:bg-white transition-colors shadow-lg"
+                 >
+                    Explore
+                 </button>
+              </div>
            </div>
          </section>
       )}
 
       {/* Competitions Grid */}
-      <section className="max-w-7xl mx-auto px-4 py-12">
+      <section id="featured-competitions" className="max-w-7xl mx-auto px-4 py-12 scroll-mt-24">
         <div className="flex justify-between items-end mb-8">
           <div>
-            <h2 className="text-3xl font-bold font-display mb-2">Featured Competitions</h2>
+            <h2 className="text-3xl font-bold font-display mb-2">
+              {searchQuery || selectedCategory !== 'All' || selectedStatus !== 'All' ? 'Search Results' : 'Featured Competitions'}
+            </h2>
             <div className="w-20 h-1 bg-ewc-gold"></div>
           </div>
           <button onClick={() => onNavigate(NavSection.COMPETITIONS)} className="text-ewc-gold flex items-center gap-2 hover:text-white transition-colors">
@@ -161,21 +275,46 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
           </button>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {games.slice(0, 3).map(game => (
-            <div key={game.id} className="group relative overflow-hidden rounded-xl h-64 border border-white/10 cursor-pointer">
-              <img src={game.image} alt={game.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-              <div className="absolute bottom-0 left-0 p-6 w-full">
-                <span className="px-2 py-1 bg-ewc-gold text-black text-xs font-bold rounded mb-2 inline-block">
-                  {game.prizePool}
-                </span>
-                <h3 className="text-2xl font-bold font-display text-white mb-1">{game.title}</h3>
-                <p className="text-gray-400 text-sm">{game.category}</p>
+        {filteredGames.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredGames.slice(0, 6).map(game => (
+              <div key={game.id} className="group relative overflow-hidden rounded-xl h-64 border border-white/10 cursor-pointer" onClick={() => onNavigate(NavSection.COMPETITIONS)}>
+                <img src={game.image} alt={game.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+                
+                {/* Status Badge */}
+                <div className="absolute top-4 right-4">
+                    <span className={`px-2 py-1 text-xs font-bold rounded uppercase ${
+                      game.status === 'Live' ? 'bg-red-600 text-white animate-pulse' : 
+                      game.status === 'Upcoming' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'
+                    }`}>
+                      {game.status}
+                    </span>
+                </div>
+
+                <div className="absolute bottom-0 left-0 p-6 w-full">
+                  <span className="px-2 py-1 bg-ewc-gold text-black text-xs font-bold rounded mb-2 inline-block">
+                    {game.prizePool}
+                  </span>
+                  <h3 className="text-2xl font-bold font-display text-white mb-1">{game.title}</h3>
+                  <p className="text-gray-400 text-sm">{game.category}</p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20 bg-[#111] rounded-xl border border-white/5">
+            <Filter size={48} className="mx-auto mb-4 text-gray-600" />
+            <h3 className="text-xl font-bold text-gray-300 mb-2">No competitions found</h3>
+            <p className="text-gray-500">Try adjusting your search or filters.</p>
+            <button 
+               onClick={() => { setSearchQuery(''); setSelectedCategory('All'); setSelectedStatus('All'); }}
+               className="mt-4 text-ewc-gold hover:underline"
+            >
+               Clear Filters
+            </button>
+          </div>
+        )}
       </section>
 
       {/* Club Championship Leaderboard */}
